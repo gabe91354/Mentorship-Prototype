@@ -3,342 +3,377 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Mentorship System (Sets + Promote)</title>
+  <title>Mentorship System (6 Generations Limit)</title>
   <style>
-    body { font-family: Arial, sans-serif; padding: 20px; }
-    input, select, button { margin: 5px 0; }
-    #mentorSection, #menteeSection, #adminSection { margin-top: 20px; }
+    body { font-family: Arial, sans-serif; padding: 20px; background: #f7f9fc; color: #222; }
+    .card { background: #fff; padding: 18px; border-radius: 10px; box-shadow: 0 6px 18px rgba(20,30,60,0.06); max-width:800px; margin: 12px auto; }
+    header { text-align:center; margin-bottom:12px; }
+    input, select, button { margin: 6px 0; padding:8px 10px; border-radius:6px; border:1px solid #d1d9e6; width:100%; font-size:14px; }
+    .row { display:flex; gap:10px; }
+    .small { font-size:13px; color:#666; margin-bottom:8px; }
+    .hidden { display:none; }
+    .controls { margin-top: 10px; display:flex; gap:8px; flex-wrap:wrap; }
+    .controls button { flex:1; }
     ul { margin-left: 20px; }
-
-    /* Tree styling */
-    .tree {
-      display: flex;
-      justify-content: center;
-      align-items: flex-start;
-      flex-direction: column;
-      gap: 20px;
-    }
-    .node {
-      display: inline-block;
-      text-align: center;
-      padding: 10px 18px;
-      margin: 10px;
-      background-color: #f6f9ff;
-      border: 2px solid #2b6cb0;
-      border-radius: 8px;
-      position: relative;
-      min-width: 100px;
-    }
+    .tree { display:flex; justify-content:center; align-items:flex-start; flex-direction:column; gap:20px; }
+    .node { display:inline-block; text-align:center; padding:10px 18px; margin:10px; background:#f6f9ff; border:2px solid #2b6cb0; border-radius:8px; position:relative; min-width:100px; }
     .node small { display:block; color:#333; font-size:11px; margin-top:6px; }
-    .line-down {
-      width: 2px;
-      height: 18px;
-      background-color: #888;
-      margin: 0 auto;
-    }
-    .children {
-      display: flex;
-      justify-content: center;
-      align-items: flex-start;
-      position: relative;
-      gap: 10px;
-      margin-top: 6px;
-    }
-    .children::before {
-      content: "";
-      position: absolute;
-      top: 0;
-      left: 0;
-      right: 0;
-      height: 2px;
-      background: #888;
-    }
-    .children .node::before {
-      content: "";
-      position: absolute;
-      top: -18px;
-      left: 50%;
-      width: 2px;
-      height: 18px;
-      background: #888;
-      transform: translateX(-50%);
-    }
-
-    .controls { margin-top: 8px; }
-    .promoteBtn { margin-left: 8px; }
+    .line-down { width:2px; height:18px; background:#888; margin: 0 auto; }
+    .children { display:flex; justify-content:center; align-items:flex-start; position:relative; gap:10px; margin-top:6px; }
+    .children::before { content:""; position:absolute; top:0; left:0; right:0; height:2px; background:#888; }
+    .children .node::before { content:""; position:absolute; top:-18px; left:50%; width:2px; height:18px; background:#888; transform:translateX(-50%); }
+    .pending { color:orange; font-style:italic; }
+    .approved { color:green; font-weight:bold; }
+    .note { background:#fff8e1; border:1px solid #ffecb3; padding:8px; border-radius:6px; color:#6b4b00; margin-bottom:8px; }
   </style>
 </head>
 <body>
-  <h1>Mentorship System (Sets + Promote)</h1>
+  <div class="card">
+    <header>
+      <h1>Mentorship System (6 Generations Limit)</h1>
+      <div class="small">Simple local demo — data stored in your browser (localStorage)</div>
+    </header>
 
-  <!-- Login -->
-  <div id="loginDiv">
-    <h2>Login / Register</h2>
-    <input type="text" id="username" placeholder="Enter your name" />
-    <select id="rank">
-      <option value="mentor">Mentor</option>
-      <option value="mentee">Mentee</option>
-      <option value="admin">Admin</option>
-    </select>
-    <button onclick="login()">Login</button>
+    <!-- LOGIN CARD -->
+    <div id="loginCard">
+      <h2>Login</h2>
+      <input id="loginUsername" placeholder="Username" />
+      <input id="loginPassword" type="password" placeholder="Password (admin or your account password)" />
+      <select id="loginRank">
+        <option value="mentor">Mentor</option>
+        <option value="mentee">Mentee</option>
+        <option value="admin">Admin</option>
+      </select>
+      <div id="adminInfo" class="note hidden">Admin access: enter admin username & password then press "Admin Login". Contact admin if needed.</div>
+      <div class="row" style="margin-top:6px;">
+        <button style="flex:1" onclick="handleLogin()">Login</button>
+        <button style="flex:1" onclick="showRegister()">Register</button>
+      </div>
+    </div>
+
+    <!-- REGISTER CARD -->
+    <div id="registerCard" class="hidden">
+      <h2>Register</h2>
+      <input id="regUsername" placeholder="Choose a username" />
+      <input id="regPassword" type="password" placeholder="Choose a password" />
+      <select id="regRank">
+        <option value="mentor">Mentor</option>
+        <option value="mentee">Mentee</option>
+      </select>
+      <div class="small">Mentors require admin approval before they can add mentees. Mentees are auto-approved.</div>
+      <div class="row" style="margin-top:6px;">
+        <button style="flex:1" onclick="registerUser()">Create account</button>
+        <button style="flex:1" onclick="showLogin()">Back to Login</button>
+      </div>
+    </div>
   </div>
 
   <!-- Mentor Section -->
-  <div id="mentorSection" style="display:none;">
-    <h2>Welcome, Mentor!</h2>
+  <div id="mentorSection" class="card hidden">
+    <h2>Welcome, Mentor: <span id="mentorName"></span></h2>
+    <div id="mentorStatus" class="small"></div>
+
     <div class="controls">
-      <input type="text" id="newMentee" placeholder="Add mentee name" />
+      <input id="newMentee" placeholder="Add mentee username (exact username)" />
       <button onclick="addMentee()">Add Mentee</button>
       <button onclick="viewMyTree()">View My Tree</button>
       <button onclick="logout()">Logout</button>
     </div>
+
     <h3>Your Mentees:</h3>
     <ul id="menteeList"></ul>
     <div id="myTreeContainer"></div>
   </div>
 
   <!-- Mentee Section -->
-  <div id="menteeSection" style="display:none;">
-    <h2>Welcome, Mentee!</h2>
-    <p>Waiting for mentor to add you...</p>
-    <button onclick="logout()">Logout</button>
+  <div id="menteeSection" class="card hidden">
+    <h2>Welcome, Mentee: <span id="menteeName"></span></h2>
+    <div id="menteeInfo" class="small"></div>
+    <div class="controls">
+      <button onclick="logout()">Logout</button>
+    </div>
   </div>
 
   <!-- Admin Section -->
-  <div id="adminSection" style="display:none;">
+  <div id="adminSection" class="card hidden">
     <h2>Admin Panel</h2>
     <div class="controls">
       <button onclick="removeAllRecords()">Remove All Records</button>
       <button onclick="logout()">Logout</button>
     </div>
+    <h3>Pending Mentor Approvals</h3>
+    <ul id="pendingMentors"></ul>
+
     <h3>Mentorship Trees (Sets)</h3>
     <div id="treeContainer"></div>
   </div>
 
 <script>
-/*
- Data model stored in localStorage:
- users: [{ name, rank: 'mentor'|'mentee'|'admin', mentees: [...names], set: number }]
- sets: [1,2,...]   (list of set ids; new set created by push)
-*/
+/* ---------------------------
+   Utilities: hashing + storage
+   --------------------------- */
+async function sha256Hex(str) {
+  const enc = new TextEncoder();
+  const data = enc.encode(str);
+  const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+  const hashArray = Array.from(new Uint8Array(hashBuffer));
+  return hashArray.map(b => b.toString(16).padStart(2,'0')).join('');
+}
 
-// load or initialize
+/* load/save */
 let users = JSON.parse(localStorage.getItem('users')) || [];
 let sets = JSON.parse(localStorage.getItem('sets')) || [1];
+let currentUser = null;
 
-// helper: persist
 function saveAll() {
   localStorage.setItem('users', JSON.stringify(users));
   localStorage.setItem('sets', JSON.stringify(sets));
 }
 
-/* ---------- Authentication / UI ---------- */
+/* ---------------------------
+   UI switching
+   --------------------------- */
+function showRegister() {
+  document.getElementById('loginCard').classList.add('hidden');
+  document.getElementById('registerCard').classList.remove('hidden');
+}
+function showLogin() {
+  document.getElementById('registerCard').classList.add('hidden');
+  document.getElementById('loginCard').classList.remove('hidden');
+}
+function logout() {
+  currentUser = null;
+  document.getElementById('mentorSection').classList.add('hidden');
+  document.getElementById('menteeSection').classList.add('hidden');
+  document.getElementById('adminSection').classList.add('hidden');
+  document.getElementById('loginCard').classList.remove('hidden');
+  document.getElementById('registerCard').classList.add('hidden');
+  document.getElementById('loginUsername').value = '';
+  document.getElementById('loginPassword').value = '';
+}
 
-let currentUser = null;
+/* ---------------------------
+   Register (async hashing)
+   --------------------------- */
+async function registerUser() {
+  const name = document.getElementById('regUsername').value.trim();
+  const password = document.getElementById('regPassword').value;
+  const rank = document.getElementById('regRank').value;
+  if (!name) return alert('Please enter a username.');
+  if (!password) return alert('Please choose a password.');
 
-function login() {
-  const name = document.getElementById('username').value.trim();
-  const rank = document.getElementById('rank').value;
-  if (!name) { alert('Please enter a name.'); return; }
+  if (users.some(u => u.name === name)) return alert('Username already exists. Choose another name.');
 
-  let user = users.find(u => u.name === name);
-  if (!user) {
-    // new registration => place in latest set
-    user = { name, rank, mentees: [], set: sets[sets.length - 1] };
-    users.push(user);
-    saveAll();
-    alert(`Registered ${name} as ${rank} in set #${user.set}`);
+  const passwordHash = await sha256Hex(password);
+  const approved = rank === 'mentee'; // mentees auto-approved
+  const user = { name, rank, mentees: [], set: sets[sets.length - 1], approved, passwordHash };
+  users.push(user);
+  saveAll();
+  alert(`Registered ${name} as ${rank}${rank === 'mentor' ? ' (awaiting admin approval)' : ''}. You can login now.`);
+  document.getElementById('regUsername').value = '';
+  document.getElementById('regPassword').value = '';
+  showLogin();
+}
+
+/* ---------------------------
+   Login (admin / normal)
+   --------------------------- */
+async function handleLogin() {
+  const name = document.getElementById('loginUsername').value.trim();
+  const password = document.getElementById('loginPassword').value;
+  const rank = document.getElementById('loginRank').value;
+  if (!name) return alert('Enter username.');
+
+  // Admin flow
+  if (rank === 'admin') {
+    if (name === 'user_1234' && password === 'unknown5404') {
+      // admin logged in
+      currentUser = { name, rank: 'admin' };
+      showUserSection(currentUser);
+      return;
+    } else {
+      return alert('Invalid admin credentials.');
+    }
   }
+
+  const user = users.find(u => u.name === name);
+  if (!user) return alert('No account found. Please register first.');
+
+  if (user.rank !== rank) {
+    return alert(`This account is registered as ${user.rank}. Please choose the same role when logging in.`);
+  }
+
+  // Password verification: if user has passwordHash require match
+  if (!user.passwordHash) {
+    // Legacy/old account with no stored password
+    return alert('This account has no password stored (legacy). Please re-register to set a password.');
+  }
+  const enteredHash = await sha256Hex(password || '');
+  if (enteredHash !== user.passwordHash) return alert('Wrong password.');
+
+  // successful login
   currentUser = user;
   showUserSection(user);
 }
 
-function logout() {
-  currentUser = null;
-  document.getElementById('loginDiv').style.display = '';
-  document.getElementById('mentorSection').style.display = 'none';
-  document.getElementById('menteeSection').style.display = 'none';
-  document.getElementById('adminSection').style.display = 'none';
-  document.getElementById('myTreeContainer').innerHTML = '';
-}
-
-/* ---------- UI Display ---------- */
-
+/* ---------------------------
+   Show sections
+   --------------------------- */
 function showUserSection(user) {
-  document.getElementById('loginDiv').style.display = 'none';
-  document.getElementById('myTreeContainer').innerHTML = '';
+  document.getElementById('loginCard').classList.add('hidden');
+  document.getElementById('registerCard').classList.add('hidden');
+  document.getElementById('mentorSection').classList.add('hidden');
+  document.getElementById('menteeSection').classList.add('hidden');
+  document.getElementById('adminSection').classList.add('hidden');
 
   if (user.rank === 'mentor') {
-    document.getElementById('mentorSection').style.display = 'block';
-    document.getElementById('menteeSection').style.display = 'none';
-    document.getElementById('adminSection').style.display = 'none';
+    document.getElementById('mentorSection').classList.remove('hidden');
+    document.getElementById('mentorName').textContent = user.name;
+    document.getElementById('mentorStatus').innerHTML = user.approved ? '<span class="approved">✅ Approved Mentor</span>' : '<span class="pending">⏳ Waiting for Admin Approval</span>';
     updateMenteeList(user);
   } else if (user.rank === 'mentee') {
-    document.getElementById('mentorSection').style.display = 'none';
-    document.getElementById('menteeSection').style.display = 'block';
-    document.getElementById('adminSection').style.display = 'none';
+    document.getElementById('menteeSection').classList.remove('hidden');
+    document.getElementById('menteeName').textContent = user.name;
+    // show only mentor info
+    const mentor = users.find(u => u.mentees.includes(user.name) && u.set === user.set);
+    document.getElementById('menteeInfo').textContent = mentor ? `Your mentor: ${mentor.name} (set #${mentor.set})` : 'You do not have a mentor yet.';
   } else if (user.rank === 'admin') {
-    document.getElementById('mentorSection').style.display = 'none';
-    document.getElementById('menteeSection').style.display = 'none';
-    document.getElementById('adminSection').style.display = 'block';
+    document.getElementById('adminSection').classList.remove('hidden');
+    renderPendingMentors();
     renderHierarchyTree();
   }
 }
 
-/* ---------- Core logic ---------- */
-
-// Calculate generation level within a specific set.
-// Level 1 => top (no mentor in set). If a user has a mentor in same set, recursion increases level.
+/* ---------------------------
+   Mentor/Mentee core logic (kept as original)
+   --------------------------- */
 function getUserGenerationInSet(name, setNum, level = 1) {
-  // find mentor in same set who has this user as mentee
   const mentor = users.find(u => u.set === setNum && u.mentees.includes(name));
   if (!mentor) return level;
   return getUserGenerationInSet(mentor.name, setNum, level + 1);
 }
 
-// Add mentee (mentor can add only registered mentees and only those in same set allowed)
 function addMentee() {
   if (!currentUser || currentUser.rank !== 'mentor') return alert('Only mentors can add mentees.');
+  if (!currentUser.approved) return alert('You are not yet approved by the admin.');
+
   const newMenteeName = document.getElementById('newMentee').value.trim();
   if (!newMenteeName) return alert('Enter mentee name.');
 
   const mentee = users.find(u => u.name === newMenteeName);
-  if (!mentee) return alert('This mentee is not registered yet. Only registered users can be added.');
+  if (!mentee) return alert('This mentee is not registered yet.');
+  if (mentee.rank !== 'mentee') return alert('You can only add users who are mentees.');
 
-  // ensure mentee is rank mentee (not admin). You can allow adding existing mentors if desired; here we require rank === 'mentee'
-  if (mentee.rank !== 'mentee') return alert('You can only add users who are registered as mentees.');
-
-  // mentor's set and generation
   const mentor = currentUser;
   const mentorLevel = getUserGenerationInSet(mentor.name, mentor.set);
 
-  if (mentorLevel >= 5) {
-    // We reached limit — we want to create a new set and move this mentee to that new set as a mentor.
+  if (mentorLevel >= 6) {
     const newSetId = sets.length + 1;
     sets.push(newSetId);
-    // promote mentee to mentor in new set
     mentee.rank = 'mentor';
-    mentee.mentees = []; // start fresh
+    mentee.mentees = [];
+    mentee.approved = true;            // promoted instantly into new set — immediately approved
     mentee.set = newSetId;
     saveAll();
-    alert(`Generation limit reached (5). ${mentee.name} was promoted and moved to new mentorship set #${newSetId}.`);
-    // refresh mentor's mentee list (we did not add this mentee to current mentor)
+    alert(`Generation limit reached (6). ${mentee.name} was moved to new mentorship set #${newSetId} as mentor.`);
     updateMenteeList(mentor);
-    // If admin is visible, refresh
-    if (currentUser && currentUser.rank === 'admin') renderHierarchyTree();
+    document.getElementById('newMentee').value = '';
     return;
   }
 
-  // normal add: add mentee to mentor's mentees if not already and set mentee's set to mentor's set
   if (!mentor.mentees.includes(newMenteeName)) {
     mentor.mentees.push(newMenteeName);
-    mentee.set = mentor.set; // place mentee in same set
+    mentee.set = mentor.set;
     saveAll();
     updateMenteeList(mentor);
-    if (currentUser && currentUser.rank === 'admin') renderHierarchyTree();
   } else {
     alert(`${newMenteeName} is already in your mentee list.`);
   }
   document.getElementById('newMentee').value = '';
 }
 
-// update mentor's mentee list and show promote button
 function updateMenteeList(mentor) {
   const list = document.getElementById('menteeList');
   list.innerHTML = '';
   if (!mentor.mentees || mentor.mentees.length === 0) {
-    const li = document.createElement('li');
-    li.textContent = 'No mentee recorded';
-    list.appendChild(li);
+    list.innerHTML = '<li>No mentee recorded</li>';
     return;
   }
 
   mentor.mentees.forEach(mName => {
     const li = document.createElement('li');
     li.textContent = mName + ` (set #${getUserSet(mName)})`;
-
     const promoteBtn = document.createElement('button');
     promoteBtn.textContent = 'Promote to Mentor';
     promoteBtn.className = 'promoteBtn';
-    promoteBtn.onclick = () => {
-      promoteMenteeFlow(mName, mentor.name);
-    };
-
-    // determine promotion possibility: if promoting in same set would exceed limit then show note but still allow promotion (it will create new set)
-    const menteeSet = getUserSet(mName);
-    const menteeLevelInSet = getUserGenerationInSet(mName, menteeSet);
-    if (menteeLevelInSet >= 5) {
-      promoteBtn.title = 'Promoting will move this user to a new set (already at generation 5 in current set).';
-    }
-
+    promoteBtn.onclick = () => promoteMenteeFlow(mName, mentor.name);
     li.appendChild(promoteBtn);
     list.appendChild(li);
   });
 }
 
-// helper: get user's set number (defaults to last set if missing)
 function getUserSet(name) {
   const u = users.find(x => x.name === name);
   return u ? u.set : sets[sets.length - 1];
 }
 
-/* Promote flow: mentor promotes menteeName; we implement the logic described:
-   - Find mentee object
-   - Check their generation in the mentor's set (we want to know if promotion stays in same set or needs new set)
-   - If promote would remain within <=5, change rank to mentor and keep set
-   - If promotion would exceed 5, create new set and move promoted user there as mentor
-   - Save and refresh UI
-*/
 function promoteMenteeFlow(menteeName, promoterName) {
   const mentee = users.find(u => u.name === menteeName);
   if (!mentee) return alert('User not found.');
-
   if (mentee.rank === 'mentor') return alert(`${menteeName} is already a mentor.`);
 
-  // promoter's set
+  // instant promotion: mentor trusts mentee -> no admin approval required
   const promoter = users.find(u => u.name === promoterName);
   const promoterSet = promoter ? promoter.set : getUserSet(promoterName);
+  const menteeLevel = getUserGenerationInSet(menteeName, promoterSet);
 
-  // compute mentee generation within promoter's set (if mentee isn't in same set, treat as top)
-  const inSameSet = mentee.set === promoterSet;
-  const menteeLevelInPromoterSet = inSameSet ? getUserGenerationInSet(menteeName, promoterSet) : 1;
-
-  if (menteeLevelInPromoterSet < 5) {
-    // safe to promote within same set
+  if (menteeLevel < 6) {
     mentee.rank = 'mentor';
-    // keep mentee.set as promoterSet (if previously different, unify)
+    mentee.mentees = [];
+    mentee.approved = true;   // instant approval
     mentee.set = promoterSet;
     saveAll();
-    alert(`${menteeName} has been promoted to mentor in set #${promoterSet}.`);
+    alert(`${menteeName} has been promoted to mentor (instant, approved).`);
   } else {
-    // would exceed 5 -> create new set and move them there as mentor
     const newSetId = sets.length + 1;
     sets.push(newSetId);
     mentee.rank = 'mentor';
-    mentee.mentees = mentee.mentees || [];
+    mentee.mentees = [];
+    mentee.approved = true;   // instant approval
     mentee.set = newSetId;
     saveAll();
-    alert(`${menteeName} was at generation 5 — moved and promoted to new mentorship set #${newSetId}.`);
+    alert(`${menteeName} was at generation 6 — moved to new mentorship set #${newSetId} and is now mentor.`);
   }
-
-  // refresh current mentor's list if logged-in mentor
-  if (currentUser && currentUser.rank === 'mentor') {
-    const mentorObj = users.find(u => u.name === currentUser.name);
-    updateMenteeList(mentorObj);
-    // also show updated small tree for mentor if viewed
-    viewMyTree();
-  }
-  // refresh admin view if open
-  if (currentUser && currentUser.rank === 'admin') renderHierarchyTree();
+  // refresh UI
+  if (currentUser && currentUser.rank === 'mentor') updateMenteeList(currentUser);
+  viewMyTree();
 }
 
-/* ---------- Admin tree rendering (per-set) ---------- */
+/* ---------------------------
+   Admin functions (approvals, tree)
+   --------------------------- */
+function renderPendingMentors() {
+  const ul = document.getElementById('pendingMentors');
+  ul.innerHTML = '';
+  const pending = users.filter(u => u.rank === 'mentor' && !u.approved);
+  if (pending.length === 0) {
+    ul.innerHTML = '<li>No pending mentors.</li>';
+    return;
+  }
+  pending.forEach(u => {
+    const li = document.createElement('li');
+    li.textContent = u.name + ' (set #' + u.set + ') ';
+    const approveBtn = document.createElement('button');
+    approveBtn.textContent = 'Approve';
+    approveBtn.onclick = () => { u.approved = true; saveAll(); renderPendingMentors(); renderHierarchyTree(); };
+    li.appendChild(approveBtn);
+    ul.appendChild(li);
+  });
+}
 
 function renderHierarchyTree() {
   const treeContainer = document.getElementById('treeContainer');
   treeContainer.innerHTML = '';
-
-  // iterate sets
   sets.forEach(setNum => {
     const section = document.createElement('div');
     section.style.marginBottom = '24px';
@@ -346,57 +381,46 @@ function renderHierarchyTree() {
     header.textContent = `Set #${setNum}`;
     section.appendChild(header);
 
-    // find roots in this set (mentors in set who are not mentees of anyone in same set)
     const roots = users.filter(u => u.set === setNum && u.rank === 'mentor' && !users.some(x => x.set === setNum && x.mentees.includes(u.name)));
     if (roots.length === 0) {
-      const p = document.createElement('p');
-      p.textContent = 'No mentors recorded for this set.';
-      section.appendChild(p);
+      section.innerHTML += '<p>No mentors recorded for this set.</p>';
       treeContainer.appendChild(section);
       return;
     }
 
     const tree = document.createElement('div');
     tree.className = 'tree';
-    roots.forEach(root => {
-      tree.appendChild(buildNodeWithLimit(root, 1, setNum));
-    });
+    roots.forEach(root => tree.appendChild(buildNodeWithLimit(root, 1, setNum)));
     section.appendChild(tree);
     treeContainer.appendChild(section);
   });
 }
 
-// Build tree node but stop after 5 levels in given set
 function buildNodeWithLimit(user, level, setNum) {
   const nodeDiv = document.createElement('div');
   nodeDiv.className = 'node';
-  nodeDiv.innerHTML = `<strong>${user.name}</strong><small>${user.rank} • set #${user.set}</small>`;
-
-  if (user.mentees && user.mentees.length > 0 && level < 5) {
+  nodeDiv.innerHTML = `<strong>${user.name}</strong><small>${user.rank}${user.approved === false ? ' (pending)' : ''} • set #${user.set}</small>`;
+  if (user.mentees && user.mentees.length > 0 && level < 6) {
     const down = document.createElement('div');
     down.className = 'line-down';
     nodeDiv.appendChild(down);
-
     const container = document.createElement('div');
     container.className = 'children';
     user.mentees.forEach(mName => {
-      // only show children in same set
       const mObj = users.find(x => x.name === mName && x.set === setNum);
       if (mObj) container.appendChild(buildNodeWithLimit(mObj, level + 1, setNum));
     });
     nodeDiv.appendChild(container);
   }
-
   return nodeDiv;
 }
 
-/* ---------- Mentor personal tree view ---------- */
-
+/* Mentor sees their own tree */
 function viewMyTree() {
-  if (!currentUser || currentUser.rank !== 'mentor') return alert('Only mentors can view their tree here.');
+  if (!currentUser || currentUser.rank !== 'mentor') return alert('Only mentors can view their tree.');
   const container = document.getElementById('myTreeContainer');
   container.innerHTML = '';
-  const root = users.find(u => u.name === currentUser.name);
+  const root = users.find(u => u.name === currentUser.name && u.set === currentUser.set);
   if (!root) return;
   const tree = document.createElement('div');
   tree.className = 'tree';
@@ -404,8 +428,7 @@ function viewMyTree() {
   container.appendChild(tree);
 }
 
-/* ---------- Utilities ---------- */
-
+/* Remove all records */
 function removeAllRecords() {
   if (!confirm('Are you sure you want to remove all records?')) return;
   users = [];
@@ -416,17 +439,15 @@ function removeAllRecords() {
   location.reload();
 }
 
-/* ---------- Initial debug: (optional) create sample data if none exist) ---------- */
-// (comment out if you don't want auto-sample)
-// if (users.length === 0) {
-//   users = [
-//     { name: 'Alice', rank: 'mentor', mentees: ['Bob','Carol'], set: 1 },
-//     { name: 'Bob', rank: 'mentor', mentees: ['Dave'], set: 1 },
-//     { name: 'Carol', rank: 'mentee', mentees: [], set: 1 },
-//     { name: 'Dave', rank: 'mentee', mentees: [], set: 1 },
-//   ];
-//   saveAll();
-//}
+/* Helper: find user and show message if legacy/no password */
+(function startupChecks(){
+  // small UI behavior: show admin note when admin selected in loginRank
+  const loginRank = document.getElementById('loginRank');
+  loginRank.addEventListener('change', () => {
+    const adminInfo = document.getElementById('adminInfo');
+    if (loginRank.value === 'admin') adminInfo.classList.remove('hidden'); else adminInfo.classList.add('hidden');
+  });
+})();
 </script>
 </body>
 </html>
